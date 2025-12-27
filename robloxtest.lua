@@ -33,91 +33,94 @@ Rayfield:Notify({
 })
 
 ---------------------------------------------------------------------
--- AIMBOT TAB
+-- AIMBOT TAB (Exunys Aimbot V3 - Using your exact loadstring)
 ---------------------------------------------------------------------
 local AimbotTab = Window:CreateTab("Aimbot", nil)
 AimbotTab:CreateSection("cool dude 😂")
 
-local AimbotConnections = {}
-local AimbotEnabled = false
+local AimbotLoaded = false
+local Aimbot = nil
 
 AimbotTab:CreateButton({
-    Name = "Toggle Aimbot (Hold RMB)",
+    Name = "Toggle Aimbot (Exunys V3)",
     Callback = function()
-        AimbotEnabled = not AimbotEnabled
+        if not AimbotLoaded then
+            local success, err = pcall(function()
+                Aimbot = loadstring(game:HttpGet("https://raw.githubusercontent.com/Exunys/Aimbot-V3/main/src/Aimbot.lua"))()
+                ExunysDeveloperAimbot.Load()
+                getgenv().ExunysDeveloperAimbot = {
+	DeveloperSettings = {
+		UpdateMode = "RenderStepped",
+		TeamCheckOption = "TeamColor",
+		RainbowSpeed = 1 -- Bigger = Slower
+	},
 
-        for _, conn in pairs(AimbotConnections) do
-            if conn.Connected then conn:Disconnect() end
+	Settings = {
+		Enabled = true,
+
+		TeamCheck = false,
+		AliveCheck = true,
+		WallCheck = false,
+
+		OffsetToMoveDirection = false, -- Prediction
+		OffsetIncrement = 15, -- Min: 1; Max: 30 -- Amplitude
+
+		Sensitivity = 0, -- Animation length (in seconds) before fully locking onto target / CFrame Sensitivity
+		Sensitivity2 = 3.5, -- mousemoverel Sensitivity
+
+		LockMode = 1, -- 1 = CFrame; 2 = mousemoverel
+		LockPart = "Head", -- Body part to lock on
+
+		TriggerKey = Enum.UserInputType.MouseButton2,
+		Toggle = false
+	},
+
+	FOVSettings = {
+		Enabled = true,
+		Visible = true,
+
+		Radius = 640, -- Field Of View
+		NumSides = 60,
+
+		Thickness = 1,
+		Transparency = 1,
+		Filled = false,
+
+		RainbowColor = true,
+		RainbowOutlineColor = false,
+		Color = Color3.fromRGB(255, 255, 255),
+		OutlineColor = Color3.fromRGB(0, 0, 0),
+		LockedColor = Color3.fromRGB(255, 150, 150)
+	}
+}
+            end)
+
+            if success then
+                AimbotLoaded = true
+                Rayfield:Notify({
+                    Title = "Aimbot",
+                    Content = "Exunys Aimbot V3 Loaded! Use the trigger key (default: MouseButton2/RMB)",
+                    Duration = 7
+                })
+            else
+                Rayfield:Notify({
+                    Title = "Aimbot Failed",
+                    Content = "Failed to load: " .. tostring(err),
+                    Duration = 8
+                })
+                return
+            end
+        else
+            -- Toggle enabled state
+            if Aimbot and Aimbot.Settings then
+                Aimbot.Settings.Enabled = not Aimbot.Settings.Enabled
+                Rayfield:Notify({
+                    Title = "Aimbot",
+                    Content = Aimbot.Settings.Enabled and "Enabled" or "Disabled",
+                    Duration = 4
+                })
+            end
         end
-        table.clear(AimbotConnections)
-
-        if not AimbotEnabled then
-            Rayfield:Notify({Title = "Aimbot", Content = "Disabled", Duration = 3})
-            return
-        end
-
-        Rayfield:Notify({Title = "Aimbot", Content = "Enabled - Hold Right Click", Duration = 4})
-
-        local Camera = workspace.CurrentCamera
-        local Players = game:GetService("Players")
-        local RunService = game:GetService("RunService")
-        local UserInputService = game:GetService("UserInputService")
-        local TweenService = game:GetService("TweenService")
-        local LocalPlayer = Players.LocalPlayer
-        local Holding = false
-
-        _G.TeamCheck = false
-        _G.AimPart = "Head"
-        _G.Sensitivity = 0.2
-
-        local function GetClosestPlayer()
-            local closest = nil
-            local maxDist = math.huge
-
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    local humanoid = player.Character:FindFirstChild("Humanoid")
-                    if humanoid and humanoid.Health > 0 then
-                        if not _G.TeamCheck or player.Team ~= LocalPlayer.Team then
-                            local root = player.Character.HumanoidRootPart
-                            local screenPos, onScreen = Camera:WorldToScreenPoint(root.Position)
-                            if onScreen then
-                                local mousePos = UserInputService:GetMouseLocation()
-                                local dist = (Vector2.new(mousePos.X, mousePos.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                                if dist < maxDist then
-                                    maxDist = dist
-                                    closest = player
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-            return closest
-        end
-
-        table.insert(AimbotConnections, UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton2 then
-                Holding = true
-            end
-        end))
-
-        table.insert(AimbotConnections, UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton2 then
-                Holding = false
-            end
-        end))
-
-        table.insert(AimbotConnections, RunService.RenderStepped:Connect(function()
-            if Holding and AimbotEnabled then
-                local target = GetClosestPlayer()
-                if target and target.Character and target.Character:FindFirstChild(_G.AimPart) then
-                    TweenService:Create(Camera, TweenInfo.new(_G.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                        CFrame = CFrame.new(Camera.CFrame.Position, target.Character[_G.AimPart].Position)
-                    }):Play()
-                end
-            end
-        end))
     end,
 })
 
@@ -229,7 +232,7 @@ FlingTab:CreateButton({
 })
 
 ---------------------------------------------------------------------
--- FLY TAB (Smooth Fly GUI V3 - No Choppy!)
+-- FLY TAB (Fly GUI V3 - Smooth)
 ---------------------------------------------------------------------
 local FlyTab = Window:CreateTab("Fly", nil)
 FlyTab:CreateSection("Fly gui v3 😂 (smooth - no choppy/backwards)")
@@ -244,7 +247,7 @@ FlyTab:CreateButton({
         if success then
             Rayfield:Notify({
                 Title = "Fly GUI V3",
-                Content = "Loaded! Open the GUI (usually appears on screen) - toggle fly, adjust speed slider for smoothness. Super smooth controls!",
+                Content = "Loaded! GUI appears on screen - toggle fly & adjust speed for perfect smoothness!",
                 Duration = 8
             })
         else
